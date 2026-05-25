@@ -18,7 +18,7 @@ func abrirArchivo(path string) (*bufio.Scanner, *os.File) {
 	return bufio.NewScanner(archivo), archivo
 }
 
-// carga de doctores y pacientes
+// carga de doctores y pacientes ------------------------------------------------------------------
 func cargaDoctores(path string) map[string]string {
 	scanner, archivo := abrirArchivo(path)
 	defer archivo.Close()
@@ -54,21 +54,18 @@ func cargaPacientes(path string) map[string]int {
 	return pacientes
 }
 
-//
-
-func pedirTurno(args []string, pacientes map[string]int, doctores map[string]string) {
-	//
+// mapa de especialidades----------------------------------------------------------------------
+func construirEspecialidades(doctores map[string]string) map[string]*colaEspecialidad {
+	especialidades := make(map[string]*colaEspecialidad)
+	for _, especialidad := range doctores {
+		if _, existe := especialidades[especialidad]; !existe {
+			especialidades[especialidad] = nuevaColaEspecialidad()
+		}
+	}
+	return especialidades
 }
 
-func atenderSiguiente(args []string, doctores map[string]string) {
-	//
-}
-
-func informe(args []string, doctores map[string]string) {
-	//
-}
-
-// loop de comandos
+// loop de comandos ---------------------------------------------------------------------------
 func main() {
 	if len(os.Args) != 3 {
 		fmt.Fprintln(os.Stderr, "Uso: tp2 <doctores.csv> <pacientes.csv>")
@@ -77,6 +74,7 @@ func main() {
 
 	doctores := cargaDoctores(os.Args[1])
 	pacientes := cargaPacientes(os.Args[2])
+	especialidades := construirEspecialidades(doctores)
 
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
@@ -92,7 +90,7 @@ func main() {
 
 		switch comando {
 		case "PEDIR_TURNO":
-			pedirTurno(args, pacientes, doctores)
+			pedirTurno(args, pacientes, especialidades)
 		case "ATENDER_SIGUIENTE":
 			atenderSiguiente(args, doctores)
 		case "INFORME":
