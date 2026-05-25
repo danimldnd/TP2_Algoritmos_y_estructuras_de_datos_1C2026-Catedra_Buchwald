@@ -1,16 +1,15 @@
 package main
 
 import (
-	cola_prioridad "../tdas/cola_prioridad"
-
-	cola "../tdas/cola"
+	cola "tdas/cola"
+	cola_prioridad "tdas/cola_prioridad"
 )
 
 // pacienteRegular representa un paciente en la cola de regulares
 type pacienteRegular struct {
 	nombre string
 	año    int
-	orden  int // desempate: menor orden = llegó antes
+	orden  int
 }
 
 // colaEspecialidad maneja la lista de espera de una especialidad
