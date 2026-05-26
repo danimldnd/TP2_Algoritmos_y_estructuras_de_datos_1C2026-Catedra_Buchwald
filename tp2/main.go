@@ -6,7 +6,12 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	diccionario "tdas/diccionarios"
 )
+
+func cmpStrings(a, b string) int {
+	return strings.Compare(a, b)
+}
 
 // funcion para abrir archivo
 func abrirArchivo(path string) (*bufio.Scanner, *os.File) {
@@ -19,18 +24,28 @@ func abrirArchivo(path string) (*bufio.Scanner, *os.File) {
 }
 
 // carga de doctores y pacientes ------------------------------------------------------------------
-func cargaDoctores(path string) map[string]string {
+func cargaDoctores(path string) diccionario.DiccionarioOrdenado[string, *doctor] {
 	scanner, archivo := abrirArchivo(path)
 	defer archivo.Close()
 
-	doctores := make(map[string]string)
+	doctores := diccionario.CrearABB[string, *doctor](cmpStrings)
+
 	for scanner.Scan() {
 		partes := strings.SplitN(scanner.Text(), ",", 2)
 		if len(partes) != 2 {
 			continue
 		}
-		doctores[partes[0]] = partes[1]
+
+		nombre := partes[0]
+		especialidad := strings.TrimSpace(partes[1])
+
+		doctores.Guardar(nombre, &doctor{
+			nombre:       nombre,
+			especialidad: especialidad,
+			atendidos:    0,
+		})
 	}
+
 	return doctores
 }
 
@@ -55,13 +70,16 @@ func cargaPacientes(path string) map[string]int {
 }
 
 // mapa de especialidades----------------------------------------------------------------------
-func construirEspecialidades(doctores map[string]string) map[string]*colaEspecialidad {
+func construirEspecialidades(doctores diccionario.DiccionarioOrdenado[string, *doctor]) map[string]*colaEspecialidad {
 	especialidades := make(map[string]*colaEspecialidad)
-	for _, especialidad := range doctores {
-		if _, existe := especialidades[especialidad]; !existe {
-			especialidades[especialidad] = nuevaColaEspecialidad()
+
+	doctores.Iterar(func(nombre string, doctor *doctor) bool {
+		if _, existe := especialidades[doctor.especialidad]; !existe {
+			especialidades[doctor.especialidad] = nuevaColaEspecialidad()
 		}
-	}
+		return true
+	})
+
 	return especialidades
 }
 
@@ -81,7 +99,7 @@ func main() {
 		linea := scanner.Text()
 		partes := strings.SplitN(linea, ":", 2)
 		if len(partes) != 2 {
-			fmt.Printf("ERROR: formato de comando incorrecto ('%s')\n", linea)
+			fmt.Printf(ENOENT_FORMATO, linea)
 			continue
 		}
 
@@ -92,11 +110,11 @@ func main() {
 		case "PEDIR_TURNO":
 			pedirTurno(args, pacientes, especialidades)
 		case "ATENDER_SIGUIENTE":
-			atenderSiguiente(args, doctores)
+			atenderSiguiente(args, doctores, especialidades)
 		case "INFORME":
 			informe(args, doctores)
 		default:
-			fmt.Printf("ERROR: no existe el comando '%s'\n", comando)
+			fmt.Printf(ENOENT_CMD, comando)
 		}
 	}
 }
